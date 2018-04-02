@@ -1,13 +1,31 @@
-# 基于PSCWS4词库的PHP中文分词工具
-词库官方网址：http://www.xunsearch.com/scws/<br>
-这是用纯 PHP 代码实现的 C 版 Libscws 的全部功能，即第四版的 PSCWS<br>
-PSCWS4 使用文档：http://www.xunsearch.com/scws/docs.php#pscws4<br>
-<hr>
-<h3>安装</h3>
-<pre>composer require wxkxklmyt/pscws4</pre>
-<hr>
-<h3>使用</h3>
-<pre>
+SCWS: Simple Chinese Word Segmentation
+======================================
+PSCWS4 is a pure PHP implention of SCWS, which is a C-extension for PHP.
+This project is a fork of [wxkxklmyt/pscws4].
+
+[wxkxklmyt/pscws4]: https://github.com/wxkxklmyt/pscws4
+
+
+About SCWS
+----------
+SCWS is a dictionary-based Chinese word segmentation library.
+For more information, please visit [official site][official] and [github-repo][github-repo].
+
+[official]: http://www.xunsearch.com/scws/
+[github-repo]: https://github.com/hightman/scws
+
+
+About PSCWS
+-----------
+The official documentation can be found here: http://www.xunsearch.com/scws/docs.php#pscws4
+
+### Installation
+```
+composer require wxkxklmyt/pscws4
+```
+
+### Usage
+```
 /**
  * SCWS中文分词
  *
@@ -19,20 +37,15 @@ PSCWS4 使用文档：http://www.xunsearch.com/scws/docs.php#pscws4<br>
  */
 $scws = new Scws();
 $scws -> scws('能做到柔和、善解、忍辱，才有办法与人结好缘。——证严法师《静思语》');
-</pre>
-<hr>
-<h3>运行结果</h3>
-<pre>
-静思 善解 法师 柔和 做到
-</pre>
-<hr>
-<h3>其它说明</h3>
-<ol>
-  <li>默认返回结果为字符串，返回字符串支持自定义分隔符，默认为空格</li>
-  <li>支持返回结果为数组</li>
-  <li>支持返回词数量自定义，默认为5个</li>
-</ol>
-<hr>
-官网(我的梦)：https://www.4ui.cn/
-<hr>
-<p><strong>版权申明：这里只是把PSCWS4封装成composer包，词库版权属于原作者</strong></p>
+```
+
+The result is: `静思 善解 法师 柔和 做到`
+
+1. Return type defaults to string, words are connected by delimeter char which is space by default.
+2. It's supported to make return type an array.
+3. Number of return words can be customized and the default num is 5.
+
+
+CopyRights
+==========
+All Rights reserve to the original author and contributors.
