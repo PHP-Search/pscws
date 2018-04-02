@@ -1,5 +1,29 @@
 <?php
+
+/*
+ * SCWS: Simple Chinese Word Segmentation.
+ *
+ * PSCWS4 is a pure PHP implention of SCWS, which is a C-extension for PHP.
+ * This project is a fork of https://github.com/wxkxklmyt/pscws4.
+ *
+ * (c) hightman <MingL_Mar@msn.com>
+ *     wxkxklmyt <519468341@qq.com>
+ *     masterwto <masterwto@163.com>
+ *
+ * The original SCWS is wirtten by hightman (马明练), see:
+ * https://github.com/hightman/scws
+ *
+ * The PSCWS4 library is wirtten by hightman, released at
+ * http://www.xunsearch.com/scws/download.php
+ *
+ * The wxkxklmyt/pscws4 composer package is maintained by wxkxklmyt, see:
+ * https://github.com/wxkxklmyt/pscws4
+ *
+ * All rights reserved by original author and contributors.
+ */
+
 namespace wxkxklmyt;
+
 /* ----------------------------------------------------------------------- *\
  PHP版 简易中文分词第2/3版(SCWS v2/3) - xdb_r只读查询类
  -----------------------------------------------------------------------
@@ -16,172 +40,189 @@ namespace wxkxklmyt;
  \* ----------------------------------------------------------------------- */
 
 // Constant Define
-define ('XDB_VERSION',		34);		// 0x01 ~ 0xff
-define ('XDB_TAGNAME',		'XDB');		// First bytes
-define ('XDB_MAXKLEN',		0xf0);		// maxklen: < 255
+define('XDB_VERSION', 34);		// 0x01 ~ 0xff
+define('XDB_TAGNAME', 'XDB');		// First bytes
+define('XDB_MAXKLEN', 0xf0);		// maxklen: < 255
 
 // Class object Declare
 class XDB_R
 {
-	// Public var
-	var $fd = false;
-	var $hash_base = 0;
-	var $hash_prime = 0;
+    // Public var
+    public $fd = false;
+    public $hash_base = 0;
+    public $hash_prime = 0;
 
-	// Constructor Function
-	function __construct() { }
+    // Constructor Function
+    public function __construct()
+    {
+    }
 
-	// for PHP5
-	//function __construct() { $this->XDB_R(); }
-	function __destruct() { $this->Close(); }
+    // for PHP5
+    //function __construct() { $this->XDB_R(); }
+    public function __destruct()
+    {
+        $this->Close();
+    }
 
-	// Open the database: read
-	function Open($fpath)
-	{
-		// open the file
-		$this->Close();
-		if (!($fd = @fopen($fpath, 'rb')))
-		{
-			trigger_error("XDB::Open(" . basename($fpath) . ") failed.", E_USER_WARNING);
-			return false;
-		}
+    // Open the database: read
+    public function Open($fpath)
+    {
+        // open the file
+        $this->Close();
+        if (!($fd = @fopen($fpath, 'rb'))) {
+            trigger_error('XDB::Open('.basename($fpath).') failed.', E_USER_WARNING);
 
-		// check the header
-		if (!$this->_check_header($fd))
-		{
-			trigger_error("XDB::Open(" . basename($fpath) . "), invalid xdb format.", E_USER_WARNING);
-			fclose($fd);
-			return false;
-		}
+            return false;
+        }
 
-		// set the variable
-		$this->fd = $fd;
-		return true;
-	}
+        // check the header
+        if (!$this->_check_header($fd)) {
+            trigger_error('XDB::Open('.basename($fpath).'), invalid xdb format.', E_USER_WARNING);
+            fclose($fd);
 
-	// Read the value by key
-	function Get($key)
-	{
-		// check the file description
-		if (!$this->fd)
-		{
-			trigger_error("XDB:Get(), null db handler.", E_USER_WARNING);
-			return false;
-		}
+            return false;
+        }
 
-		$klen = strlen($key);
-		if ($klen == 0 || $klen > XDB_MAXKLEN)
-		return false;
+        // set the variable
+        $this->fd = $fd;
 
-		// get the data?
-		$rec = $this->_get_record($key);
+        return true;
+    }
 
-		if (!isset($rec['vlen']) || $rec['vlen'] == 0)
-		return false;
+    // Read the value by key
+    public function Get($key)
+    {
+        // check the file description
+        if (!$this->fd) {
+            trigger_error('XDB:Get(), null db handler.', E_USER_WARNING);
 
-		return $rec['value'];
-	}
+            return false;
+        }
 
-	// Close the DB
-	function Close()
-	{
-		if (!$this->fd)
-		return;
+        $klen = strlen($key);
+        if (0 === $klen || $klen > XDB_MAXKLEN) {
+            return false;
+        }
+        // get the data?
+        $rec = $this->_get_record($key);
 
-		fclose($this->fd);
-		$this->fd = false;
-	}
+        if (!isset($rec['vlen']) || 0 === $rec['vlen']) {
+            return false;
+        }
+        return $rec['value'];
+    }
 
-	// Privated Function
-	function _get_index($key)
-	{
-		$l = strlen($key);
-		$h = $this->hash_base;
-		while ($l--)
-		{
-			$h += ($h << 5);
-			$h ^= ord($key[$l]);
-			$h &= 0x7fffffff;
-		}
-		return ($h % $this->hash_prime);
-	}
+    // Close the DB
+    public function Close()
+    {
+        if (!$this->fd) {
+            return;
+        }
+        fclose($this->fd);
+        $this->fd = false;
+    }
 
-	// Check XDB Header
-	function _check_header($fd)
-	{
-		fseek($fd, 0, SEEK_SET);
-		$buf = fread($fd, 32);
-		if (strlen($buf) !== 32) return false;
-		$hdr = unpack('a3tag/Cver/Ibase/Iprime/Ifsize/fcheck/a12reversed', $buf);
-		if ($hdr['tag'] != XDB_TAGNAME) return false;
+    // Privated Function
+    public function _get_index($key)
+    {
+        $l = strlen($key);
+        $h = $this->hash_base;
+        while ($l--) {
+            $h += ($h << 5);
+            $h ^= ord($key[$l]);
+            $h &= 0x7fffffff;
+        }
 
-		// check the fsize
-		$fstat = fstat($fd);
-		if ($fstat['size'] != $hdr['fsize'])
-		return false;
+        return $h % $this->hash_prime;
+    }
 
-		// check float?
+    // Check XDB Header
+    public function _check_header($fd)
+    {
+        fseek($fd, 0, SEEK_SET);
+        $buf = fread($fd, 32);
+        if (32 !== strlen($buf)) {
+            return false;
+        }
+        $hdr = unpack('a3tag/Cver/Ibase/Iprime/Ifsize/fcheck/a12reversed', $buf);
+        if (XDB_TAGNAME !== $hdr['tag']) {
+            return false;
+        }
+        // check the fsize
+        $fstat = fstat($fd);
+        if ($fstat['size'] !== $hdr['fsize']) {
+            return false;
+        }
+        // check float?
 
-		$this->hash_base = $hdr['base'];
-		$this->hash_prime = $hdr['prime'];
-		$this->version = $hdr['ver'];
-		$this->fsize = $hdr['fsize'];
-		return true;
-	}
+        $this->hash_base = $hdr['base'];
+        $this->hash_prime = $hdr['prime'];
+        $this->version = $hdr['ver'];
+        $this->fsize = $hdr['fsize'];
 
-	// get the record by first key
-	function _get_record($key)
-	{
-		$this->_io_times = 1;
-		$index = ($this->hash_prime > 1 ? $this->_get_index($key) : 0);
-		$poff = $index * 8 + 32;
-		fseek($this->fd, $poff, SEEK_SET);
-		$buf = fread($this->fd, 8);
+        return true;
+    }
 
-		if (strlen($buf) == 8) $tmp = unpack('Ioff/Ilen', $buf);
-		else $tmp = array('off' => 0, 'len' => 0);
-		return $this->_tree_get_record($tmp['off'], $tmp['len'], $poff, $key);
-	}
+    // get the record by first key
+    public function _get_record($key)
+    {
+        $this->_io_times = 1;
+        $index = ($this->hash_prime > 1 ? $this->_get_index($key) : 0);
+        $poff = $index * 8 + 32;
+        fseek($this->fd, $poff, SEEK_SET);
+        $buf = fread($this->fd, 8);
 
-	// get the record by tree
-	function _tree_get_record($off, $len, $poff = 0, $key = '')
-	{
-		if ($len == 0)
-		return (array('poff' => $poff));
-		$this->_io_times++;
+        if (8 === strlen($buf)) {
+            $tmp = unpack('Ioff/Ilen', $buf);
+        } else {
+            $tmp = ['off' => 0, 'len' => 0];
+        }
 
-		// get the data & compare the key data
-		fseek($this->fd, $off, SEEK_SET);
-		$rlen = XDB_MAXKLEN + 17;
-		if ($rlen > $len) $rlen = $len;
-		$buf = fread($this->fd, $rlen);
-		$rec = unpack('Iloff/Illen/Iroff/Irlen/Cklen', substr($buf, 0, 17));
-		$fkey = substr($buf, 17, $rec['klen']);
-		$cmp = ($key ? strcmp($key, $fkey) : 0);
-		if ($cmp > 0)
-		{
-			// --> right
-			unset($buf);
-			return $this->_tree_get_record($rec['roff'], $rec['rlen'], $off + 8, $key);
-		}
-		else if ($cmp < 0)
-		{
-			// <-- left
-			unset($buf);
-			return $this->_tree_get_record($rec['loff'], $rec['llen'], $off, $key);
-		}
-		else {
-			// found!!
-			$rec['poff'] = $poff;
-			$rec['off'] = $off;
-			$rec['len'] = $len;
-			$rec['voff'] = $off + 17 + $rec['klen'];
-			$rec['vlen'] = $len - 17 - $rec['klen'];
-			$rec['key'] = $fkey;
+        return $this->_tree_get_record($tmp['off'], $tmp['len'], $poff, $key);
+    }
 
-			fseek($this->fd, $rec['voff'], SEEK_SET);
-			$rec['value'] = fread($this->fd, $rec['vlen']);
-			return $rec;
-		}
-	}
+    // get the record by tree
+    public function _tree_get_record($off, $len, $poff = 0, $key = '')
+    {
+        if (0 === $len) {
+            return ['poff' => $poff];
+        }
+        ++$this->_io_times;
+
+        // get the data & compare the key data
+        fseek($this->fd, $off, SEEK_SET);
+        $rlen = XDB_MAXKLEN + 17;
+        if ($rlen > $len) {
+            $rlen = $len;
+        }
+        $buf = fread($this->fd, $rlen);
+        $rec = unpack('Iloff/Illen/Iroff/Irlen/Cklen', substr($buf, 0, 17));
+        $fkey = substr($buf, 17, $rec['klen']);
+        $cmp = ($key ? strcmp($key, $fkey) : 0);
+        if ($cmp > 0) {
+            // --> right
+            unset($buf);
+
+            return $this->_tree_get_record($rec['roff'], $rec['rlen'], $off + 8, $key);
+        }
+        if ($cmp < 0) {
+            // <-- left
+            unset($buf);
+
+            return $this->_tree_get_record($rec['loff'], $rec['llen'], $off, $key);
+        }
+
+        // found!!
+        $rec['poff'] = $poff;
+        $rec['off'] = $off;
+        $rec['len'] = $len;
+        $rec['voff'] = $off + 17 + $rec['klen'];
+        $rec['vlen'] = $len - 17 - $rec['klen'];
+        $rec['key'] = $fkey;
+
+        fseek($this->fd, $rec['voff'], SEEK_SET);
+        $rec['value'] = fread($this->fd, $rec['vlen']);
+
+        return $rec;
+    }
 }
